@@ -24,13 +24,9 @@ def get_connect_time_and_disconnect():
     total_connection_time = 0
     for x in range(number_of_connections):
         print("Connection number %s" % x)
-<<<<<<< HEAD
         connection_time = connect()
         print("Connection time: %s" % connection_time)
         total_connection_time += connection_time
-=======
-        total_connection_time += connect()
->>>>>>> origin/master
         disconnect()
 
     return "Number of connections: %s\n" \
@@ -56,10 +52,6 @@ def is_connected():
     return is_connected
 
 def connect():
-<<<<<<< HEAD
-=======
-
->>>>>>> origin/master
     if is_connected():
         disconnect()
     root_element = pyuiautomation.GetRootElement()
@@ -68,45 +60,29 @@ def connect():
     # Get monitor button:
     button_monitor = get_monitor_button(root_element)
     print("Connecting to monitor")
-<<<<<<< HEAD
     time.sleep(3)
-=======
-    time.sleep(2)
->>>>>>> origin/master
     starting_time = time.time()
     button_monitor.Invoke()
     output = subprocess.check_output(["adb", "logcat", "|", "findstr", PRINTING_FRAME_LINE])
     ending_time = time.time()
     print("Successfully connected!")
-<<<<<<< HEAD
     time.sleep(4)
-=======
->>>>>>> origin/master
 
     go_to_desktop()
     return ending_time - starting_time
 
 def disconnect():
     print("Disconnecting")
-<<<<<<< HEAD
-=======
-
->>>>>>> origin/master
     root_element = pyuiautomation.GetRootElement()
     open_project_bar()
     button_disconnect = root_element.findfirst('descendants', Name='Disconnect')
     if str(button_disconnect) != 'None':
         button_disconnect.Invoke()
-<<<<<<< HEAD
         time.sleep(3)
-=======
-        time.sleep(2)
->>>>>>> origin/master
     go_to_desktop()
 
 def open_connect_bar():
     autoit.send("#k")
-<<<<<<< HEAD
     time.sleep(3)
 
 def open_project_bar():
@@ -116,17 +92,6 @@ def open_project_bar():
 def go_to_desktop():
     autoit.send("#d")
     time.sleep(3)
-=======
-    time.sleep(2)
-
-def open_project_bar():
-    autoit.send("#p")
-    time.sleep(2)
-
-def go_to_desktop():
-    autoit.send("#d")
-    time.sleep(2)
->>>>>>> origin/master
 
 def get_monitor_button(root_element):
     print("retrieveing monitor button")
