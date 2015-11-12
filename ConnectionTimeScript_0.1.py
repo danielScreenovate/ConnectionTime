@@ -25,10 +25,10 @@ def get_connect_time_and_disconnect():
 
     total_connection_time = 0
     for x in range(number_of_connections):
-        # print("Connection number %s" % (x + 1))
+        print("Connection number %s" % (x + 1))
         connection_time = connect()
         connection_times.append(connection_time)
-        # print("Connection time: %s" % connection_time)
+        print("Connection time: %s" % connection_time)
         total_connection_time += connection_time
         disconnect()
 
@@ -41,7 +41,7 @@ def get_connect_time_and_disconnect():
 
 #TODO: Implement in a more elegant way
 def is_connected():
-    # print("Is the Source connected to the Monitor?")
+    print("Is the Source connected to the Monitor?")
     is_connected = True
     root_element = pyuiautomation.GetRootElement()
     open_project_bar()
@@ -65,20 +65,20 @@ def connect():
 
     # Get monitor button:
     button_monitor = get_monitor_button(root_element)
-    # print("Connecting to monitor")
+    print("Connecting to monitor")
     time.sleep(3)
     starting_time = time.time()
     button_monitor.Invoke()
     output = subprocess.check_output(["adb", "logcat", "|", "findstr", PRINTING_FRAME_LINE])
     ending_time = time.time()
-    # print("Successfully connected!")
+    print("Successfully connected!")
     time.sleep(4)
 
     go_to_desktop()
     return ending_time - starting_time
 
 def disconnect():
-    # print("Disconnecting")
+    print("Disconnecting")
     root_element = pyuiautomation.GetRootElement()
     open_project_bar()
     button_disconnect = root_element.findfirst('descendants', Name='Disconnect')
