@@ -106,13 +106,3 @@ def get_monitor_button(root_element):
     return button_monitor
 
 print(get_connect_time_and_disconnect())
-
-
-
-# TODO: Implement alternate (and better) way of retrieving Monitor's name for connection.
-# Following rows are relevant:
-#
-# element = monitor.device(resourceId='com.screenovate.dell.monitorserver:id/video_surface_view')
-# Michael:
-# "search for id.ssid in process com.screenovate.dell.monitorserver (not in process com.screenovate.dell.monitorserver:id).
-# to get the monitor name"
