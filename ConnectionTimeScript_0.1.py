@@ -2,6 +2,7 @@ __author__ = 'daniel'
 
 import comtypes
 import pyuiautomation
+from uiautomator import Device
 import ctypes
 # from comtypes import *
 # from comtypes.client import *
@@ -12,10 +13,12 @@ import os
 import time
 import subprocess
 import csv
+from Monitor import Monitor
 
 # MADE FOR WINDOWS 10
 
 PRINTING_FRAME_LINE = "Entering function void screenovate::WfdDepacketizer::onNewVideoFrame"
+CONNECTED_LINE = "STA-CONNECTED"
 
 def get_connect_time_and_disconnect():
     connection_times = []
@@ -42,20 +45,20 @@ def get_connect_time_and_disconnect():
 #TODO: Implement in a more elegant way
 def is_connected():
     print("Is the Source connected to the Monitor?")
-    is_connected = True
+    boo_connected = True
     root_element = pyuiautomation.GetRootElement()
     open_project_bar()
     #Find 'Disconnect' button
     button_disconnect = root_element.findfirst('descendants', Name='Disconnect')
     if str(button_disconnect) == 'None':
-        is_connected = False
+        boo_connected = False
         print("Nope")
     else:
         print("Yup")
 
     go_to_desktop()
 
-    return is_connected
+    return boo_connected
 
 def connect():
     if is_connected():
@@ -64,13 +67,21 @@ def connect():
     open_connect_bar()
 
     # Get monitor button:
-    button_monitor = get_monitor_button(root_element)
+    button_monitor = get_connection_button(root_element)
     print("Connecting to monitor")
     time.sleep(3)
     starting_time = time.time()
     button_monitor.Invoke()
-    output = subprocess.check_output(["adb", "logcat", "|", "findstr", PRINTING_FRAME_LINE])
+
+    #TODO:Need to implement using multithreaded programing:
+
+    print(subprocess.check_output(["adb", "logcat", "|", "findstr", CONNECTED_LINE], shell=True))
+    print(subprocess.check_output(["adb", "logcat", "|", "findstr", PRINTING_FRAME_LINE], shell=True))
+
+
+
     ending_time = time.time()
+
     print("Successfully connected!")
     time.sleep(4)
 
@@ -99,16 +110,10 @@ def go_to_desktop():
     autoit.send("#d")
     time.sleep(3)
 
-def get_monitor_button(root_element):
-    print("retrieveing monitor button")
-    monitor_name = subprocess.check_output("adb shell getprop | findstr ssid", shell=True)
-    start_index = monitor_name.rfind('Dell', 0)
-    monitor_name = monitor_name[start_index:]
-    end_index = monitor_name.rfind(']',0)
-    monitor_name = monitor_name[:end_index]
-    print("Monitor name is: %s" % monitor_name)
-    button_monitor = root_element.findfirst('descendants', Name=monitor_name)
-
+def get_connection_button(root_element):
+    monitor = Monitor()
+    print("Monitor name is: %s" % monitor.name)
+    button_monitor = root_element.findfirst('descendants', Name=monitor.name)
     return button_monitor
 
 def write_to_csv(connection_times):
@@ -117,11 +122,10 @@ def write_to_csv(connection_times):
     if not os.path.exists(directory):
         os.makedirs(directory)
     with open('%s/test_%s.csv' % (directory, curr_time), 'w+') as csvfile:
-        csv_writer = csv.writer(csvfile, delimiter=' ',
+        csv_writer = csv.writer(csvfile, delimiter=',',
                                 quotechar='|', quoting=csv.QUOTE_MINIMAL)
         for x in range(len(connection_times)):
             csv_writer.writerow((x + 1, connection_times[x]))
-
 
 print(get_connect_time_and_disconnect())
 autoit.send("#d")
