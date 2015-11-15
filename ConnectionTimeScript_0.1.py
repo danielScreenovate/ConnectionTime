@@ -1,118 +1,98 @@
 __author__ = 'daniel'
-
+from LogTools import write_to_csv
 import comtypes
-import pyuiautomation
 import ctypes
-# from comtypes import *
-# from comtypes.client import *
+from comtypes import *
+from comtypes.client import *
 comtypes.client.GetModule('UIAutomationCore.dll')
 from comtypes.gen.UIAutomationClient import *
-import autoit
-import os
 import time
 import subprocess
+from Monitor import Monitor
+import Windows10
+import threading
 
 # MADE FOR WINDOWS 10
 
 PRINTING_FRAME_LINE = "Entering function void screenovate::WfdDepacketizer::onNewVideoFrame"
+CONNECTED_LINE = "STA-CONNECTED"
 
-def get_connect_time_and_disconnect():
+def get_connect_time_and_disconnect(windows_source, monitor):
+    connection_times = []
     number_of_connections = input("Enter number of connections: ")
     while (not isinstance(number_of_connections, int)) or number_of_connections <= 0:
         number_of_connections = input("Please enter an integer larger than 0:")
 
     total_connection_time = 0
     for x in range(number_of_connections):
-        print("Connection number %s" % x)
-        connection_time = connect()
+        #Setup
+        #Check not connected
+        if verify_connected() == True:
+            windows_source.disconnect()
+
+        lock2.acquire()
+        #start thread
+        thread = threading.Thread(target=thread_target)
+        ending_time = thread.start()
+
+        lock2.acquire()
+        try:
+            starting_time = windows_source.connect()
+        finally:
+            lock1.release()
+
+        connection_time = ending_time - starting_time
+
+        connection_times.append(connection_time)
         print("Connection time: %s" % connection_time)
         total_connection_time += connection_time
-        disconnect()
+        windows_source.disconnect()
+
+    # Write connection times to .csv file
+    write_to_csv(connection_times)
 
     return "Number of connections: %s\n" \
            "Average connection time: %s" % (number_of_connections, total_connection_time / number_of_connections)
 
+def verify_connected():
+    boo_connected = False
+    windows_client_mac_addresses = windows_source.get_mac_addresses()
+    print "got mac addresses: \n%s\n" % windows_client_mac_addresses
+    for address in windows_client_mac_addresses:
 
-#TODO: Implement in a more elegant way
-def is_connected():
-    print("Is the Source connected to the Monitor?")
-    is_connected = True
-    root_element = pyuiautomation.GetRootElement()
-    open_project_bar()
-    #Find 'Disconnect' button
-    button_disconnect = root_element.findfirst('descendants', Name='Disconnect')
-    if str(button_disconnect) == 'None':
-        is_connected = False
-        print("Nope")
-    else:
-        print("Yup")
+        if monitor.is_mac_address(address.lower()):
+            boo_connected = True
+            break
+    print "boo_connected = %s" % boo_connected
+    return boo_connected
 
-    go_to_desktop()
+def thread_target():
+    lock1.acquire()
+    try:
+        subprocess.check_output(["adb", "logcat", "|", "findstr", CONNECTED_LINE], shell=True)
+    finally:
+        lock2.release()
 
-    return is_connected
+    try:
+        lock1.acquire()
 
-def connect():
-    if is_connected():
-        disconnect()
-    root_element = pyuiautomation.GetRootElement()
-    open_connect_bar()
+        #critical section 2
+        subprocess.check_output(["adb", "logcat", "|", "findstr", PRINTING_FRAME_LINE], shell=True)
+        ending_time = time.time()
+        #end critical section 2
 
-    # Get monitor button:
-    button_monitor = get_monitor_button(root_element)
-    print("Connecting to monitor")
-    time.sleep(3)
-    starting_time = time.time()
-    button_monitor.Invoke()
-    output = subprocess.check_output(["adb", "logcat", "|", "findstr", PRINTING_FRAME_LINE])
-    ending_time = time.time()
-    print("Successfully connected!")
-    time.sleep(4)
+    finally:
+        lock1.release()
+        lock2.release()
 
-    go_to_desktop()
-    return ending_time - starting_time
+    return ending_time
 
-def disconnect():
-    print("Disconnecting")
-    root_element = pyuiautomation.GetRootElement()
-    open_project_bar()
-    button_disconnect = root_element.findfirst('descendants', Name='Disconnect')
-    if str(button_disconnect) != 'None':
-        button_disconnect.Invoke()
-        time.sleep(3)
-    go_to_desktop()
+#setup
+windows_source = Windows10.Windows10()
+monitor = Monitor()
 
-def open_connect_bar():
-    autoit.send("#k")
-    time.sleep(3)
+lock1 = threading.Lock()
+lock2 = threading.Lock()
 
-def open_project_bar():
-    autoit.send("#p")
-    time.sleep(3)
-
-def go_to_desktop():
-    autoit.send("#d")
-    time.sleep(3)
-
-def get_monitor_button(root_element):
-    print("retrieveing monitor button")
-    monitor_name = subprocess.check_output("adb shell getprop | findstr ssid", shell=True)
-    start_index = monitor_name.rfind('Dell', 0)
-    monitor_name = monitor_name[start_index:]
-    end_index = monitor_name.rfind(']',0)
-    monitor_name = monitor_name[:end_index]
-    print("Monitor name is: %s" % monitor_name)
-    button_monitor = root_element.findfirst('descendants', Name=monitor_name)
-
-    return button_monitor
-
-print(get_connect_time_and_disconnect())
-
-
-
-# TODO: Implement alternate (and better) way of retrieving Monitor's name for connection.
-# Following rows are relevant:
-#
-# element = monitor.device(resourceId='com.screenovate.dell.monitorserver:id/video_surface_view')
-# Michael:
-# "search for id.ssid in process com.screenovate.dell.monitorserver (not in process com.screenovate.dell.monitorserver:id).
-# to get the monitor name"
+print(get_connect_time_and_disconnect(windows_source, monitor))
+ctypes.windll.user32.MessageBoxA(0, "Finished running connection time measurement script.", "Testing Complete!", 1)
