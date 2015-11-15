@@ -34,7 +34,6 @@ def get_connect_time_and_disconnect(windows_source, monitor):
         #start thread
         thread = threading.Thread(target=thread_target)
         ending_time = thread.start()
-
         lock2.acquire()
         try:
             starting_time = windows_source.connect()
@@ -42,7 +41,6 @@ def get_connect_time_and_disconnect(windows_source, monitor):
             lock1.release()
 
         connection_time = ending_time - starting_time
-
         connection_times.append(connection_time)
         print("Connection time: %s" % connection_time)
         total_connection_time += connection_time
@@ -72,18 +70,12 @@ def thread_target():
         subprocess.check_output(["adb", "logcat", "|", "findstr", CONNECTED_LINE], shell=True)
     finally:
         lock2.release()
-
-    try:
         lock1.acquire()
-
-        #critical section 2
+    try:
         subprocess.check_output(["adb", "logcat", "|", "findstr", PRINTING_FRAME_LINE], shell=True)
         ending_time = time.time()
-        #end critical section 2
-
     finally:
         lock1.release()
-        lock2.release()
 
     return ending_time
 

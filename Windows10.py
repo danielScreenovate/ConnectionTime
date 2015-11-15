@@ -25,17 +25,10 @@ class Windows10:
         button_monitor = self.root_element.findfirst('descendants', Name=monitor_name)
         return button_monitor
 
-    def disconnect(self):
-        time.sleep(2)
-        print("Disconnecting")
-        self._open_project_bar()
-        button_disconnect = self.root_element.findfirst('descendants', Name='Disconnect')
-        if str(button_disconnect) == 'None':
-            button_disconnect = self.root_element.findfirst('descendants', Name='PC screen only')
-
-        button_disconnect.Invoke()
-        time.sleep(3)
-        self._go_to_desktop()
+    def connect(self, monitor_name):
+        button = self._get_connection_button(monitor_name)
+        button.Invoke()
+        return time.time()
 
     def get_mac_addresses(self):
         addresses = []
@@ -48,9 +41,14 @@ class Windows10:
             addresses.append(mac)
         return addresses
 
-    def connect(self, monitor_name):
-        button = self._get_connection_button(monitor_name)
-        button.Invoke()
-        return time.time()
+    def disconnect(self):
+        time.sleep(2)
+        print("Disconnecting")
+        self._open_project_bar()
+        button_disconnect = self.root_element.findfirst('descendants', Name='Disconnect')
+        if str(button_disconnect) == 'None':
+            button_disconnect = self.root_element.findfirst('descendants', Name='PC screen only')
 
-
+        button_disconnect.Invoke()
+        time.sleep(3)
+        self._go_to_desktop()
