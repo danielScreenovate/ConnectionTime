@@ -50,5 +50,17 @@ class Windows10:
             button_disconnect = self.root_element.findfirst('descendants', Name='PC screen only')
 
         button_disconnect.Invoke()
-        time.sleep(3)
+        time.sleep(2)
+        self._go_to_desktop()
+
+    def remove_monitor(self):
+        self._open_connect_bar()
+        button_devices = self.root_element.findfirst('descendants', Name='find other devices')
+        time.sleep(2)
+        button_monitor = self.root_element.findfirst('descendants', Name=monitor_name)
+        button_monitor.Invoke()
+        time.sleep(1)
+        button_remove = self.root_element.findfirst('descendants', Name='Remove')
+        button_remove.Invoke()
+        time.sleep(1)
         self._go_to_desktop()

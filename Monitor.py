@@ -23,5 +23,5 @@ class Monitor():
         return name
 
     def is_mac_address(self, address):
-        print "trying address: %s" % address
-        return Device(address)(description='VideoView ' + address).exists
+        print "Trying address: %s" % address
+        return Device(self.serial)(description='VideoView ' + address).exists
