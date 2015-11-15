@@ -1,0 +1,210 @@
+__author__ = 'daniel'
+from LogTools import write_to_csv
+import comtypes
+<<<<<<< .merge_file_OxPgHO
+=======
+import pyuiautomation
+from uiautomator import Device
+>>>>>>> .merge_file_187AXy
+import ctypes
+from comtypes import *
+from comtypes.client import *
+comtypes.client.GetModule('UIAutomationCore.dll')
+from comtypes.gen.UIAutomationClient import *
+import time
+import subprocess
+<<<<<<< .merge_file_OxPgHO
+from Monitor import Monitor
+import Windows10
+import threading
+=======
+import csv
+from Monitor import Monitor
+>>>>>>> .merge_file_187AXy
+
+# MADE FOR WINDOWS 10
+
+PRINTING_FRAME_LINE = "Entering function void screenovate::WfdDepacketizer::onNewVideoFrame"
+CONNECTED_LINE = "STA-CONNECTED"
+
+<<<<<<< .merge_file_OxPgHO
+def get_connect_time_and_disconnect(windows_source, monitor):
+=======
+def get_connect_time_and_disconnect():
+>>>>>>> .merge_file_187AXy
+    connection_times = []
+    number_of_connections = input("Enter number of connections: ")
+    while (not isinstance(number_of_connections, int)) or number_of_connections <= 0:
+        number_of_connections = input("Please enter an integer larger than 0:")
+
+    total_connection_time = 0
+    for x in range(number_of_connections):
+<<<<<<< .merge_file_OxPgHO
+        #Setup
+        #Check not connected
+        if verify_connected() == True:
+            windows_source.disconnect()
+
+        lock2.acquire()
+        #start thread
+        thread = threading.Thread(target=thread_target)
+        ending_time = thread.start()
+
+        lock2.acquire()
+        try:
+            starting_time = windows_source.connect()
+        finally:
+            lock1.release()
+
+        connection_time = ending_time - starting_time
+
+=======
+        print("Connection number %s" % (x + 1))
+        connection_time = connect()
+>>>>>>> .merge_file_187AXy
+        connection_times.append(connection_time)
+        print("Connection time: %s" % connection_time)
+        total_connection_time += connection_time
+        windows_source.disconnect()
+
+    # Write connection times to .csv file
+    write_to_csv(connection_times)
+
+    # Write connection times to .csv file
+    write_to_csv(connection_times)
+
+    return "Number of connections: %s\n" \
+           "Average connection time: %s" % (number_of_connections, total_connection_time / number_of_connections)
+
+def verify_connected():
+    boo_connected = False
+    windows_client_mac_addresses = windows_source.get_mac_addresses()
+    print "got mac addresses: \n%s\n" % windows_client_mac_addresses
+    for address in windows_client_mac_addresses:
+
+        if monitor.is_mac_address(address.lower()):
+            boo_connected = True
+            break
+    print "boo_connected = %s" % boo_connected
+    return boo_connected
+
+def thread_target():
+    lock1.acquire()
+    try:
+        subprocess.check_output(["adb", "logcat", "|", "findstr", CONNECTED_LINE], shell=True)
+    finally:
+        lock2.release()
+
+    try:
+        lock1.acquire()
+
+        #critical section 2
+        subprocess.check_output(["adb", "logcat", "|", "findstr", PRINTING_FRAME_LINE], shell=True)
+        ending_time = time.time()
+        #end critical section 2
+
+    finally:
+        lock1.release()
+        lock2.release()
+
+    return ending_time
+
+#setup
+windows_source = Windows10.Windows10()
+monitor = Monitor()
+
+lock1 = threading.Lock()
+lock2 = threading.Lock()
+
+<<<<<<< .merge_file_OxPgHO
+print(get_connect_time_and_disconnect(windows_source, monitor))
+=======
+#TODO: Implement in a more elegant way
+def is_connected():
+    print("Is the Source connected to the Monitor?")
+    boo_connected = True
+    root_element = pyuiautomation.GetRootElement()
+    open_project_bar()
+    #Find 'Disconnect' button
+    button_disconnect = root_element.findfirst('descendants', Name='Disconnect')
+    if str(button_disconnect) == 'None':
+        boo_connected = False
+        print("Nope")
+    else:
+        print("Yup")
+
+    go_to_desktop()
+
+    return boo_connected
+
+def connect():
+    if is_connected():
+        disconnect()
+    root_element = pyuiautomation.GetRootElement()
+    open_connect_bar()
+
+    # Get monitor button:
+    button_monitor = get_connection_button(root_element)
+    print("Connecting to monitor")
+    time.sleep(3)
+    starting_time = time.time()
+    button_monitor.Invoke()
+
+    #TODO:Need to implement using multithreaded programing:
+
+    print(subprocess.check_output(["adb", "logcat", "|", "findstr", CONNECTED_LINE], shell=True))
+    print(subprocess.check_output(["adb", "logcat", "|", "findstr", PRINTING_FRAME_LINE], shell=True))
+
+
+
+    ending_time = time.time()
+
+    print("Successfully connected!")
+    time.sleep(4)
+
+    go_to_desktop()
+    return ending_time - starting_time
+
+def disconnect():
+    print("Disconnecting")
+    root_element = pyuiautomation.GetRootElement()
+    open_project_bar()
+    button_disconnect = root_element.findfirst('descendants', Name='Disconnect')
+    if str(button_disconnect) != 'None':
+        button_disconnect.Invoke()
+        time.sleep(3)
+    go_to_desktop()
+
+def open_connect_bar():
+    autoit.send("#k")
+    time.sleep(3)
+
+def open_project_bar():
+    autoit.send("#p")
+    time.sleep(3)
+
+def go_to_desktop():
+    autoit.send("#d")
+    time.sleep(3)
+
+def get_connection_button(root_element):
+    monitor = Monitor()
+    print("Monitor name is: %s" % monitor.name)
+    button_monitor = root_element.findfirst('descendants', Name=monitor.name)
+    return button_monitor
+
+def write_to_csv(connection_times):
+    curr_time = time.time()
+    directory = "test_results"
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+    with open('%s/test_%s.csv' % (directory, curr_time), 'w+') as csvfile:
+        csv_writer = csv.writer(csvfile, delimiter=',',
+                                quotechar='|', quoting=csv.QUOTE_MINIMAL)
+        for x in range(len(connection_times)):
+            csv_writer.writerow((x + 1, connection_times[x]))
+
+print(get_connect_time_and_disconnect())
+autoit.send("#d")
+>>>>>>> .merge_file_187AXy
+ctypes.windll.user32.MessageBoxA(0, "Finished running connection time measurement script.", "Testing Complete!", 1)
