@@ -10,8 +10,8 @@ class Monitor():
 
     def _get_serial(self):
         output = subprocess.check_output(["adb", "devices"])
-        end_index = output.rfind(" ", 0)
-        serial = output[:end_index]
+        serial = output.rsplit("\n")[1].rsplit("\t")[0].strip()
+        print "Device serial: %s" % serial
         return serial
 
     def _get_monitor_name(self):
@@ -23,5 +23,10 @@ class Monitor():
         return name
 
     def is_mac_address(self, address):
-        print "Trying address: %s" % address
-        return Device(self.serial)(description='VideoView ' + address).exists
+
+        boo1 = False
+        print "Trying address: %s on device with serial: %s" % (address, self.serial)
+        boo1 = Device(self.serial)(description='VideoView ' + address).exists
+
+        print "boo1 = %s" % boo1
+        return boo1

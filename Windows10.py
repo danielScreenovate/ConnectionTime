@@ -25,6 +25,10 @@ class Windows10:
         button_monitor = self.root_element.findfirst('descendants', Name=monitor_name)
         return button_monitor
 
+    def click_enter(self):
+        autoit.send("{ENTER}")
+        time.sleep(1)
+
     def connect(self, monitor_name):
         button = self._get_connection_button(monitor_name)
         button.Invoke()
@@ -53,7 +57,7 @@ class Windows10:
         time.sleep(2)
         self._go_to_desktop()
 
-    def remove_monitor(self):
+    def remove_monitor(self, monitor_name):
         self._open_connect_bar()
         button_devices = self.root_element.findfirst('descendants', Name='find other devices')
         time.sleep(2)
