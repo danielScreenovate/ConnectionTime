@@ -10,7 +10,7 @@ import time
 import subprocess
 from Monitor import Monitor
 import Windows10
-import threading
+import multiprocessing
 
 # MADE FOR WINDOWS 10
 
@@ -28,11 +28,14 @@ def get_connect_time_and_disconnect(windows_source, monitor):
     consec_fails_list = []
     for x in range(number_of_connections):
         #Setup
+        os.system("adb devices")
+        time.sleep(2)
+        end_time = 0
         #Check not connected
-        if verify_connected() == True:
+        while verify_connected() == True:
             windows_source.disconnect()
 
-        if consecutive_failures > 2: #Remove monitor from device list
+        if consecutive_failures > 2: #TODO:Remove monitor from device list
             consec_fails_list.append(consecutive_failures)
             windows_source.remove_monitor()
 
@@ -40,16 +43,36 @@ def get_connect_time_and_disconnect(windows_source, monitor):
         subprocess.call(["adb", "logcat", "-c"])
 
         #Connect
+        print "Connecting"
+        # subprocess.check_output(["adb", "logcat", "|", "findstr", PRINTING_FRAME_LINE], shell=True)
+        # os.system("adb logcat | findstr %s" % PRINTING_FRAME_LINE)
         starting_time = windows_source.connect(monitor.name)
-        # subprocess.check_output(["adb", "logcat", "-d", "|", "findstr", PRINTING_FRAME_LINE], shell=True)
-        subprocess.check_output("adb logcat -d | findstr %s" % PRINTING_FRAME_LINE, shell=True)
-        ending_time = time.time()
+        # TODO: remove print
+        print "start time = %s" % starting_time
+        #start thread, and in that thread run the logcat command
+
+        # os.system("adb logcat | findstr %s" % PRINTING_FRAME_LINE)
+        temp = subprocess.check_output(["adb", "logcat", "|", "findstr", PRINTING_FRAME_LINE])
+        end_time = time.time()
+
+        # os.system("adb logcat | findstr %s" % PRINTING_FRAME_LINE)
+        # ending_time = time.time()
+        print "Measured end time: %s" % end_time
+        time.sleep(2)
+
+        if end_time == 0:
+            print "Time measurement failure on connection number %s" % (x + 1)
+            if verify_connected():
+                successful_connections.append(-1)
+                windows_source.disconnect()
+            continue
 
         if verify_connected(): #Succesful connection
             consecutive_failures = 0
-            connection_time = ending_time - starting_time
-            successful_connections.append(connection_time)
+            print end_time - starting_time
+            connection_time = end_time - starting_time
             print("Connection time: %s" % connection_time)
+            successful_connections.append(connection_time)
             total_connection_time += connection_time
             windows_source.disconnect()
         else: #Connection failed
@@ -63,15 +86,17 @@ def get_connect_time_and_disconnect(windows_source, monitor):
            "Average connection time: %s" % (number_of_connections, total_connection_time / number_of_connections)
 
 def verify_connected():
+    print "Verifying connection"
     boo_connected = False
     windows_client_mac_addresses = windows_source.get_mac_addresses()
-    print "got mac addresses: \n%s\n" % windows_client_mac_addresses
+    print "comparing mac addresses"
     for address in windows_client_mac_addresses:
-
         if monitor.is_mac_address(address.lower()):
             boo_connected = True
+            print "Connection verified, by comparing mac addresses."
             break
-    print "boo_connected = %s" % boo_connected
+    if boo_connected == False:
+        print "Not connected."
     return boo_connected
 
 #Initialize UIAutomator on Sink
@@ -89,6 +114,7 @@ def verify_connected():
 #         os.system("curl -d '{\"jsonrpc\":\"2.0\",\"method\":\"deviceInfo\",\"id\":1}' localhost:9008/jsonrpc/0")
 
 #Setup
+end_time = 0
 windows_source = Windows10.Windows10()
 # manually_run_jars()
 os.system("adb forward tcp:9008 tcp:9008")
@@ -96,3 +122,4 @@ monitor = Monitor()
 
 print(get_connect_time_and_disconnect(windows_source, monitor))
 ctypes.windll.user32.MessageBoxA(0, "Finished running connection time measurement script.", "Testing Complete!", 1)
+exit()

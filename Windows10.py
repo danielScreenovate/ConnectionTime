@@ -31,10 +31,14 @@ class Windows10:
 
     def connect(self, monitor_name):
         button = self._get_connection_button(monitor_name)
+        if type(button) is None:
+            print "Reattempting to get connection button for monitor %s" % monitor_name
+            button = self._get_connection_button(monitor_name)
         button.Invoke()
         return time.time()
 
     def get_mac_addresses(self):
+        print "getting mac addresses from windows source"
         addresses = []
         getmac = subprocess.check_output(["ipconfig", "/all", "|", "findstr", "Physical"], shell=True)
         rows = getmac.count(':')
@@ -59,12 +63,12 @@ class Windows10:
 
     def remove_monitor(self, monitor_name):
         self._open_connect_bar()
-        button_devices = self.root_element.findfirst('descendants', Name='find other devices')
+        button_devices = self.root_element.findfirst('descendants', Name='Find other types of devices')
         time.sleep(2)
-        button_monitor = self.root_element.findfirst('descendants', Name=monitor_name)
+        button_monitor = self.root_element.findfirst('descendants', Name="%s Not connected" % monitor_name)
         button_monitor.Invoke()
         time.sleep(1)
-        button_remove = self.root_element.findfirst('descendants', Name='Remove')
+        button_remove = self.root_element.findfirst('descendants', Name='Remove device')
         button_remove.Invoke()
         time.sleep(1)
         self._go_to_desktop()

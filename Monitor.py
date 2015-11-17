@@ -1,6 +1,7 @@
 __author__ = 'daniel'
 from uiautomator import Device
 import subprocess
+import time
 
 class Monitor():
     def __init__(self):
@@ -9,6 +10,9 @@ class Monitor():
         self.name = self._get_monitor_name()
 
     def _get_serial(self):
+        temp = subprocess.check_output(["adb", "devices"])
+        time.sleep(2)
+
         output = subprocess.check_output(["adb", "devices"])
         serial = output.rsplit("\n")[1].rsplit("\t")[0].strip()
         print "Device serial: %s" % serial
@@ -23,10 +27,7 @@ class Monitor():
         return name
 
     def is_mac_address(self, address):
+        boo = False
+        boo = Device(self.serial)(description='VideoView ' + address).exists
 
-        boo1 = False
-        print "Trying address: %s on device with serial: %s" % (address, self.serial)
-        boo1 = Device(self.serial)(description='VideoView ' + address).exists
-
-        print "boo1 = %s" % boo1
-        return boo1
+        return boo
