@@ -33,9 +33,16 @@ def get_connect_time_and_disconnect(windows_source, monitor):
         os.system("adb devices")
         time.sleep(2)
         end_time = 0
+        count = 0
         #Check not connected
         while verify_connected() == True:
+            if count > 3:
+                #Failing to disconnect.
+                boo = monitor.reboot()
+                #TODO: handle failing to disconnect and reboot
+
             windows_source.disconnect()
+            count += 1
 
         if consecutive_failures > 2:
             consec_fails_list.append(consecutive_failures)
@@ -59,11 +66,10 @@ def get_connect_time_and_disconnect(windows_source, monitor):
                 end_time = time.time()
                 proc.kill()
                 break
+            if time.time() > starting_time + 15:
+                # Failed connection
+                break
         proc.wait()
-
-        # TODO: remove print
-        print "Start time = %s" % starting_time
-        print "End time: %s" % end_time
         time.sleep(2)
 
         if end_time == 0:

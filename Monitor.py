@@ -1,6 +1,7 @@
 __author__ = 'daniel'
 from uiautomator import Device
 import subprocess
+import os
 import time
 
 class Monitor():
@@ -29,5 +30,18 @@ class Monitor():
     def is_mac_address(self, address):
         boo = False
         boo = Device(self.serial)(description='VideoView ' + address).exists
-
         return boo
+
+    def reboot(self):
+        checkBootComp = subprocess.check_output('adb {} shell getprop sys.boot_completed'.format(self.serial))
+        os.system("adb reboot")
+        time.sleep(6)
+        screenUp = '-1'
+        while screenUp != checkBootComp:
+            time.sleep(1)
+            try:
+                screenUp = subprocess.check_output('adb {} shell getprop sys.boot_completed'.format(self.serial))
+            except Exception:
+                print('waiting for the monitor' )
+        print('Screen up and fully loaded')
+        return True
