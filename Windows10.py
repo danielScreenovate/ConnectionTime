@@ -34,6 +34,8 @@ class Windows10:
         if type(button) is None:
             print "Reattempting to get connection button for monitor %s" % monitor_name
             button = self._get_connection_button(monitor_name)
+
+        # Invoke connection button and return current time.
         button.Invoke()
         return time.time()
 
@@ -61,9 +63,14 @@ class Windows10:
         time.sleep(2)
         self._go_to_desktop()
 
+
+    # TODO: accessing Devices menu
     def remove_monitor(self, monitor_name):
         self._open_connect_bar()
-        button_devices = self.root_element.findfirst('descendants', Name='Find other types of devices')
+        button_devices = self.root_element.findfirst('descendants', AutomationId='HyperlinkLaunchSettings')
+        button_devices.Invoke()
+
+
         time.sleep(2)
         button_monitor = self.root_element.findfirst('descendants', Name="%s Not connected" % monitor_name)
         button_monitor.Invoke()

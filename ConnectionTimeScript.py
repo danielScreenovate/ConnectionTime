@@ -15,6 +15,8 @@ import multiprocessing
 # MADE FOR WINDOWS 10
 
 PRINTING_FRAME_LINE = "onNewVideoFrame"
+MAX_CONSECUTIVE_CONNECTION_FAILURES = 10
+CONNECTED_LINE = "STA-CONNECTED"
 
 def get_connect_time_and_disconnect(windows_source, monitor):
     successful_connections = []
@@ -35,29 +37,33 @@ def get_connect_time_and_disconnect(windows_source, monitor):
         while verify_connected() == True:
             windows_source.disconnect()
 
-        if consecutive_failures > 2: #TODO:Remove monitor from device list
+        if consecutive_failures > 2:
             consec_fails_list.append(consecutive_failures)
-            windows_source.remove_monitor()
+            # windows_source.remove_monitor(monitor.name)
+
+        if consecutive_failures >= MAX_CONSECUTIVE_CONNECTION_FAILURES:
+            #Stop scripts
+            raise ValueError("Couldn't connect %s times in a row." % MAX_CONSECUTIVE_CONNECTION_FAILURES);
+
 
         #Clear logcat
         subprocess.call(["adb", "logcat", "-c"])
 
         #Connect
         print "Connecting"
-        # subprocess.check_output(["adb", "logcat", "|", "findstr", PRINTING_FRAME_LINE], shell=True)
-        # os.system("adb logcat | findstr %s" % PRINTING_FRAME_LINE)
         starting_time = windows_source.connect(monitor.name)
+
+        proc = subprocess.Popen(['adb', 'logcat'], stdout=subprocess.PIPE)
+        for line in proc.stdout:
+            if PRINTING_FRAME_LINE in line:
+                end_time = time.time()
+                proc.kill()
+                break
+        proc.wait()
+
         # TODO: remove print
-        print "start time = %s" % starting_time
-        #start thread, and in that thread run the logcat command
-
-        # os.system("adb logcat | findstr %s" % PRINTING_FRAME_LINE)
-        temp = subprocess.check_output(["adb", "logcat", "|", "findstr", PRINTING_FRAME_LINE])
-        end_time = time.time()
-
-        # os.system("adb logcat | findstr %s" % PRINTING_FRAME_LINE)
-        # ending_time = time.time()
-        print "Measured end time: %s" % end_time
+        print "Start time = %s" % starting_time
+        print "End time: %s" % end_time
         time.sleep(2)
 
         if end_time == 0:
@@ -119,7 +125,6 @@ windows_source = Windows10.Windows10()
 # manually_run_jars()
 os.system("adb forward tcp:9008 tcp:9008")
 monitor = Monitor()
-
 print(get_connect_time_and_disconnect(windows_source, monitor))
 ctypes.windll.user32.MessageBoxA(0, "Finished running connection time measurement script.", "Testing Complete!", 1)
 exit()
