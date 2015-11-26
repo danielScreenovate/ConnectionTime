@@ -7,7 +7,7 @@ __author__ = 'daniel'
 
 # TODO: create folder with sink name, source name, and time of test (in more readable format)
 
-def write_logs(number_of_connection_attempts, successful_connections_list, failures, consecutive_failures, source_serial, sink_serial, start_time):
+def write_logs(successful_connections_list, failures, consecutive_failures, source_serial, sink_serial, start_time):
     sum_connection_times = 0
     number_of_succesful_connections = len(successful_connections_list)
     EXTERNAL_DIRECTORY = "test_results"
@@ -33,7 +33,8 @@ def write_logs(number_of_connection_attempts, successful_connections_list, failu
             csv_writer.writerow((x + 1, consecutive_failures[x]))
 
     file = open('%s/%s/stats.txt' % (INNER_DIRECTORY, start_time), 'w+')
-    file.write("Total connection attempts: %s\n" % number_of_succesful_connections + failures)
+    number_of_connection_attempts = number_of_succesful_connections + failures
+    file.write("Total connection attempts: %s\n" % number_of_connection_attempts)
     file.write("Succesful connetions: %s\n" % number_of_succesful_connections)
     if number_of_succesful_connections != 0:
         file.write("Average connection time: %s\n" % (sum_connection_times / len(successful_connections_list)))

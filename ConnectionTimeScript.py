@@ -52,7 +52,7 @@ def get_connect_time_and_disconnect(windows_source, monitor):
 
         if consecutive_failed_connections >= MAX_CONSECUTIVE_CONNECTION_FAILURES:
             #Write data and stop script
-            write_logs(connection_attempts, connection_times, failed_connections, consec_fails_list, windows_source.serial, monitor.serial, test_start_time)
+            write_logs(connection_times, failed_connections, consec_fails_list, windows_source.serial, monitor.serial, test_start_time)
             raise ValueError("Couldn't connect %s times in a row.\nStopping script." % MAX_CONSECUTIVE_CONNECTION_FAILURES)
 
 
@@ -78,7 +78,7 @@ def get_connect_time_and_disconnect(windows_source, monitor):
             consecutive_failed_connections += 1
 
     # Write connection times to .csv file
-    write_logs(connection_attempts, connection_times, failed_connections, consec_fails_list, windows_source.serial, monitor.serial, test_start_time)
+    write_logs(connection_times, failed_connections, consec_fails_list, windows_source.serial, monitor.serial, test_start_time)
 
 def verify_connected():
     print "Verifying connection"

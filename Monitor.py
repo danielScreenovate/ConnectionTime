@@ -38,14 +38,14 @@ class Monitor():
         return boo
 
     def reboot(self):
-        checkBootComp = subprocess.check_output('adb {} shell getprop sys.boot_completed'.format(self.serial))
+        checkBootComp = subprocess.check_output('adbshell getprop sys.boot_completed')
         os.system("adb reboot")
         time.sleep(6)
         screenUp = '-1'
         while screenUp != checkBootComp:
             time.sleep(1)
             try:
-                screenUp = subprocess.check_output('adb {} shell getprop sys.boot_completed'.format(self.serial))
+                screenUp = subprocess.check_output('adb shell getprop sys.boot_completed')
             except Exception:
                 print('waiting for the monitor' )
         print('Screen up and fully loaded')
