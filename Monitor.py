@@ -11,10 +11,15 @@ class Monitor():
         self.name = self._get_monitor_name()
 
     def _get_serial(self):
-        temp = subprocess.check_output(["adb", "devices"])
-        time.sleep(2)
-
         output = subprocess.check_output(["adb", "devices"])
+        starting_time = time.time()
+        while "offline" in output and time.time() < starting_time + 20:
+            subprocess.check_output(["adb", "kill-server"])
+            time.sleep(1)
+            subprocess.check_output(["adb", "start-server"])
+            time.sleep(5)
+            output = subprocess.check_output(["adb", "devices"])
+
         serial = output.rsplit("\n")[1].rsplit("\t")[0].strip()
         print "Device serial: %s" % serial
         return serial

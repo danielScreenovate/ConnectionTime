@@ -14,88 +14,71 @@ import multiprocessing
 
 # MADE FOR WINDOWS 10
 
-PRINTING_FRAME_LINE = "onNewVideoFrame"
+PRINTING_FIRST_FRAME_LINE = "MediaCodecVideoDecoderNdk::outputThread():"
 MAX_CONSECUTIVE_CONNECTION_FAILURES = 10
 CONNECTED_LINE = "STA-CONNECTED"
+starting_time = 0
+consec_fails_list = []
+connection_times = []
 
 def get_connect_time_and_disconnect(windows_source, monitor):
-    successful_connections = []
-    number_of_connections = input("Enter number of connections: ")
-    while (not isinstance(number_of_connections, int)) or number_of_connections <= 0:
-        number_of_connections = input("Please enter an integer larger than 0:")
-
-    total_connection_time = 0
+    test_start_time = time.time()
     failed_connections = 0
-    consecutive_failures = 0
-    consec_fails_list = []
-    for x in range(number_of_connections):
+    consecutive_failed_connections = 0
+    consecutive_failed_disconnections = 0
+
+    connection_attempts = input("Enter number of connections: ")
+    while (not isinstance(connection_attempts, int)) or connection_attempts <= 0:
+        connection_attempts = input("Please enter an integer larger than 0: ")
+
+    for x in range(connection_attempts):
+
         #Setup
         os.system("adb devices")
         time.sleep(2)
         end_time = 0
-        count = 0
+        consecutive_failed_disconnections = 0
+
         #Check not connected
         while verify_connected() == True:
-            if count > 3:
-                #Failing to disconnect.
+            consecutive_failed_disconnections += 1
+            if consecutive_failed_disconnections > 3:
+                #Consecutive failure to disconnect.
                 boo = monitor.reboot()
-                #TODO: handle failing to disconnect and reboot
-
             windows_source.disconnect()
-            count += 1
 
-        if consecutive_failures > 2:
-            consec_fails_list.append(consecutive_failures)
-            # windows_source.remove_monitor(monitor.name)
+        if consecutive_failed_connections > 1:
+            consec_fails_list.append(consecutive_failed_connections)
 
-        if consecutive_failures >= MAX_CONSECUTIVE_CONNECTION_FAILURES:
-            #Stop scripts
-            raise ValueError("Couldn't connect %s times in a row." % MAX_CONSECUTIVE_CONNECTION_FAILURES);
+        if consecutive_failed_connections >= MAX_CONSECUTIVE_CONNECTION_FAILURES:
+            #Write data and stop script
+            write_logs(connection_attempts, connection_times, failed_connections, consec_fails_list, windows_source.serial, monitor.serial, test_start_time)
+            raise ValueError("Couldn't connect %s times in a row.\nStopping script." % MAX_CONSECUTIVE_CONNECTION_FAILURES)
 
 
         #Clear logcat
         subprocess.call(["adb", "logcat", "-c"])
 
         #Connect
-        print "Connecting"
-        starting_time = windows_source.connect(monitor.name)
+        connection_time = connect()
 
-        proc = subprocess.Popen(['adb', 'logcat'], stdout=subprocess.PIPE)
-        for line in proc.stdout:
-            if PRINTING_FRAME_LINE in line:
-                end_time = time.time()
-                proc.kill()
-                break
-            if time.time() > starting_time + 15:
-                # Failed connection
-                break
-        proc.wait()
-        time.sleep(2)
-
-        if end_time == 0:
-            print "Time measurement failure on connection number %s" % (x + 1)
-            if verify_connected():
-                successful_connections.append(-1)
-                windows_source.disconnect()
-            continue
+        # if end_time == 0: #Timing failed
+        #     if verify_connected():
+        #         connection_times.append(-1)
+        #         windows_source.disconnect()
+        #     continue
 
         if verify_connected(): #Succesful connection
-            consecutive_failures = 0
-            print end_time - starting_time
-            connection_time = end_time - starting_time
+            consecutive_failed_connections = 0
             print("Connection time: %s" % connection_time)
-            successful_connections.append(connection_time)
-            total_connection_time += connection_time
+            connection_times.append(connection_time)
             windows_source.disconnect()
         else: #Connection failed
             failed_connections += 1
-            consecutive_failures += 1
+            consecutive_failed_connections += 1
 
     # Write connection times to .csv file
-    write_logs(number_of_connections, successful_connections, failed_connections, consec_fails_list)
-
-    return "Number of connections: %s\n" \
-           "Average connection time: %s" % (number_of_connections, total_connection_time / number_of_connections)
+    write_logs(connection_attempts, connection_times, failed_connections, consec_fails_list, windows_source.serial, monitor.serial, test_start_time)
 
 def verify_connected():
     print "Verifying connection"
@@ -110,6 +93,34 @@ def verify_connected():
     if boo_connected == False:
         print "Not connected."
     return boo_connected
+
+def connect():
+    print "Connecting"
+
+    conn_time = listen()
+    time.sleep(2)
+    return conn_time
+
+def listen():
+    starting_time = windows_source.connect(monitor.name)
+    print "starting_time = %s" % starting_time
+    proc = subprocess.Popen(['adb', 'logcat'], stdout=subprocess.PIPE)
+    for line in proc.stdout:
+        if PRINTING_FIRST_FRAME_LINE in line:
+            end_time = time.time()
+            print "FOUND LINE!!"
+            print line
+            proc.kill()
+            break
+        if time.time() > starting_time + 20:
+            # Failed connection
+            print "Failed Connection"
+            end_time = 0
+            proc.kill()
+            break
+    proc.wait()
+    return end_time - starting_time
+
 
 #Initialize UIAutomator on Sink
 # def manually_run_jars():
@@ -131,6 +142,6 @@ windows_source = Windows10.Windows10()
 # manually_run_jars()
 os.system("adb forward tcp:9008 tcp:9008")
 monitor = Monitor()
-print(get_connect_time_and_disconnect(windows_source, monitor))
+get_connect_time_and_disconnect(windows_source, monitor)
 ctypes.windll.user32.MessageBoxA(0, "Finished running connection time measurement script.", "Testing Complete!", 1)
 exit()
