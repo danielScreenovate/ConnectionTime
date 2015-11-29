@@ -10,6 +10,7 @@ class Monitor():
         self.automation_handle = Device(self.serial)
         self.name = self._get_monitor_name()
 
+
     def _get_serial(self):
         output = subprocess.check_output(["adb", "devices"])
         starting_time = time.time()
@@ -24,6 +25,7 @@ class Monitor():
         print "Device serial: %s" % serial
         return serial
 
+
     def _get_monitor_name(self):
         output = subprocess.check_output(["adb", "shell", "dumpsys", "|", "findstr", "wifiP2pDevice=Device"], shell=True)
         start_index = output.rfind('Device: ', 0)
@@ -32,21 +34,28 @@ class Monitor():
         name = output[start_index : end_index].strip()
         return name
 
+
     def is_mac_address(self, address):
         boo = False
-        boo = Device(self.serial)(description='VideoView ' + address).exists
+        boo = self.automation_handle.exists(description='VideoView ' + address)
         return boo
 
+
     def reboot(self):
-        checkBootComp = subprocess.check_output('adbshell getprop sys.boot_completed')
-        os.system("adb reboot")
-        time.sleep(6)
+        checkBootComp = subprocess.check_output('adb {} shell getprop sys.boot_completed'.format(self.serial))
+        print('start rebbot monitor')
+        os.system('adb {} reboot'.format(self.serial))
+        self.is_boot_completed(checkBootComp)
+        print('reboot monitor completed')
+
+
+    def is_boot_completed(self , bootCompCmd):
         screenUp = '-1'
-        while screenUp != checkBootComp:
+        while screenUp != bootCompCmd:
             time.sleep(1)
             try:
-                screenUp = subprocess.check_output('adb shell getprop sys.boot_completed')
+                screenUp = subprocess.check_output('adb {} shell getprop sys.boot_completed'.format(self.serial))
             except Exception:
-                print('waiting for the monitor' )
+                print('waiting for monitor' )
         print('Screen up and fully loaded')
         return True
