@@ -82,18 +82,3 @@ class Windows10:
 
         button_disconnect.Invoke()
         time.sleep(3)
-
-
-    # def remove_monitor(self, monitor_name):
-    #     self._open_connect_bar()
-    #     button_devices = self.root_element.findfirst('descendants', AutomationId='HyperlinkLaunchSettings')
-    #     button_devices.Invoke()
-    #
-    #
-    #     time.sleep(2)
-    #     button_monitor = self.root_element.findfirst('descendants', Name="%s Not connected" % monitor_name)
-    #     button_monitor.Invoke()
-    #     time.sleep(1)
-    #     button_remove = self.root_element.findfirst('descendants', Name='Remove device')
-    #     button_remove.Invoke()
-    #     time.sleep(1)
