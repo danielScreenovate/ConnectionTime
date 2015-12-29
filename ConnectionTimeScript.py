@@ -9,20 +9,19 @@ from comtypes.gen.UIAutomationClient import *
 import time
 import subprocess
 from Monitor import Monitor
-from Windows10 import Windows10
+from WindowsSource import WindowsSource
 
-# MADE FOR WINDOWS 10
+# CURRENTLY FUNCITONAL ON WINDOWS 10 ONLY
 
-PRINTING_FIRST_FRAME_LINE = "MediaCodecVideoDecoderNdk::outputThread():"
 MAX_CONSECUTIVE_CONNECTION_FAILURES = 10
 CONNECTED_LINE = "STA-CONNECTED"
-
+PRINTING_FIRST_FRAME_LINE = "MediaCodecVideoDecoderNdk::outputThread():"
 
 def setup():
     global windows_source
     global monitor
 
-    windows_source = Windows10()
+    windows_source = WindowsSource()
     os.system("adb forward tcp:9008 tcp:9008")
     monitor = Monitor()
 
@@ -78,6 +77,7 @@ def get_connect_time_and_disconnect():
             if not handle_consecutive_disconnection_fails():
                 finish(connection_times_list, failed_connections_count, consec_fails_list, script_start_time)
 
+        #TODO: check behaviour
         if consecutive_failed_connections > 1:
             consec_fails_list.append(consecutive_failed_connections)
 
@@ -90,7 +90,7 @@ def get_connect_time_and_disconnect():
         #Connect
         connection_time = connect()
 
-        if verify_connected(): #Succesful connection
+        if verify_connected() and connection_time > 0: #Succesful connection
             consecutive_failed_connections = 0
             print("Connection time: %s" % connection_time)
             connection_times_list.append(connection_time)
@@ -123,7 +123,7 @@ def connect():
     time.sleep(2)
     return conn_time
 
-
+#Returns -1 in case of failed connection
 def listen():
     conn_end_time = 0
     test_start_time = windows_source.connect(monitor.name)
@@ -140,7 +140,11 @@ def listen():
             proc.kill()
             break
     proc.wait()
-    return conn_end_time - test_start_time
+
+    if conn_end_time - test_start_time <= 0:
+        return -1
+    else:
+        return conn_end_time - test_start_time
 
 if __name__ == "__main__":
 
